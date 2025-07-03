@@ -1,0 +1,32 @@
+{
+  "name": "local-ai-commit-msg-generator",
+  "displayName": "Local AI Commit Message Generator",
+  "description": "Generate Git commit messages using local LLMs like Code LLaMA, Phi-2, and StarCoder.",
+  "version": "1.0.0",
+  "publisher": "Team ChittTaranga",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.generateCommitMessage"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.generateCommitMessage",
+        "title": "🤖 Generate Commit Message (AI)"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "echo 'No build step needed'"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "simple-git": "^3.28.0"
+  }
+}

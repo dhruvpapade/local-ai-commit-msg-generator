@@ -1,0 +1,143 @@
+:root {
+    --accent: #007acc;
+    --accent-hover: #005f9e;
+    --bg: #1e1e1e;
+    --fg: #d4d4d4;
+    --border: #333;
+    --error: #ff5f5f;
+    --input-bg: #252526;
+    --radius: 12px;
+    --transition: 0.25s ease;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg);
+    color: var(--fg);
+    margin: 0;
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.card {
+    background: rgba(30, 30, 30, 0.85);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    width: 100%;
+    max-width: 640px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    transition: box-shadow var(--transition);
+}
+
+.card:hover {
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+}
+
+h1 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    color: var(--accent);
+    text-align: center;
+}
+
+form {
+    display: grid;
+    gap: 1.2rem;
+}
+
+label {
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+select,
+input[type="text"],
+textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--input-bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3);
+}
+
+textarea {
+    height: 120px;
+    resize: vertical;
+}
+
+.buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+button {
+    flex: 1;
+    padding: 0.75rem;
+    background-color: var(--accent);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color var(--transition), transform var(--transition);
+}
+
+button:hover {
+    background-color: var(--accent-hover);
+    transform: translateY(-2px);
+}
+
+#loader {
+    font-style: italic;
+    color: #aaa;
+    display: none;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+#ticketError {
+    color: var(--error);
+    font-size: 0.85rem;
+    display: none;
+    margin-top: 0.25rem;
+}
+
+#errorMessage {
+    display: none;
+    margin-top: 1rem;
+    color: var(--error);
+    font-weight: 500;
+}
+
+.powered-by {
+    margin-top: 2rem;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #888;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    font-style: italic;
+}
