@@ -1,7 +1,7 @@
 const simpleGit = require("simple-git");
 const fetch = require("node-fetch");
 const git = simpleGit();
-const { OLLAMA_API_URL, AI_MODEL } = require("./config");
+const { OLLAMA_API_URL_ENDPOINT, AI_MODEL } = require("./config");
 
 async function getGitDiff() {
   try {
@@ -34,7 +34,7 @@ async function generateAICommit(diff) {
         ${diff}
         `;
 
-    const response = await fetch(OLLAMA_API_URL, {
+    const response = await fetch(OLLAMA_API_URL_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

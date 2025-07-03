@@ -6,6 +6,8 @@ const simpleGit = require("simple-git");
 const git = simpleGit();
 const { spawnSync } = require("child_process");
 const axios = require("axios");
+const { OLLAMA_API_URL } = require("./config");
+
 
 function activate(context) {
   const disposable = vscode.commands.registerCommand("extension.generateCommitMessage", async function () {
@@ -123,7 +125,7 @@ function isOllamaInstalled() {
 
 async function isOllamaRunning() {
   try {
-    const res = await axios.get("http://localhost:11434");
+    const res = await axios.get(OLLAMA_API_URL);
     return res.status === 200;
   } catch (err) {
     return false;
