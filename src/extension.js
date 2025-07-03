@@ -1,13 +1,9 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const { getGitUnstagedFiles, getGitDiff, generateAICommit } = require("./aiService");
-const simpleGit = require("simple-git");
-const git = simpleGit();
-const { spawnSync } = require("child_process");
-const axios = require("axios");
-const { OLLAMA_API_URL } = require("./config");
-
+const aiService = require("./aiService");
+const gitUtils = require('./utils/gitUtils');
+const aiUtils = require('./utils/aiUtils');
 
 function activate(context) {
   const disposable = vscode.commands.registerCommand("extension.generateCommitMessage", async function () {
@@ -42,25 +38,37 @@ function activate(context) {
 
     // Handle messages from WebView
     panel.webview.onDidReceiveMessage(async (message) => {
-      console.log('Command received from WebView:', message.command);
-
       if (message.command === "generate") {
-
-        if (!isOllamaInstalled()) {
+        if (!await aiUtils.isOllamaInstalled()) {
           return panel.webview.postMessage({
             command: "info",
             text: "❌ Ollama is not installed or not available in PATH.\nPlease install it from https://ollama.com/download and try again."
           });
         }
 
-        if (!(await isOllamaRunning())) {
+        if (!(await aiUtils.isOllamaRunning())) {
           return panel.webview.postMessage({
             command: "info",
             text: "❌ Ollama is installed but not running.\nPlease start it using `ollama serve` or open the Ollama desktop app."
           });
         }
 
-        const unstagedFiles = await getGitUnstagedFiles();
+        if (!(await gitUtils.isGitRepoSafe())) {
+          return panel.webview.postMessage({
+            command: "info",
+            text: "❌ This project is not a Git repository.\nPlease run `git init` first."
+          });
+        }
+
+        const codeChanges = await gitUtils.hasCodeChanges();
+        if (!codeChanges) {
+          return panel.webview.postMessage({
+            command: "info",
+            text: `❌ No code changes detected.`
+          });
+        }
+
+        const unstagedFiles = await gitUtils.getGitUnstagedFiles();
         if (unstagedFiles.length > 0) {
           return panel.webview.postMessage({
             command: "info",
@@ -68,15 +76,15 @@ function activate(context) {
           });
         }
 
-        const diff = await getGitDiff();
-        if (!diff || diff.trim().length === 0) {
+        const diff = await gitUtils.getGitDiff();
+        if (!diff || diff?.trim().length === 0) {
           return panel.webview.postMessage({
             command: "info",
-            text: "❌ No staged changes found. Please stage your changes first."
+            ext: "❌ No file changes found. Please modify some files before generating a commit."
           });
         }
 
-        const aiMessage = await generateAICommit(diff);
+        const aiMessage = await aiService.generateAICommit(diff);
         if (!aiMessage || aiMessage.length < 5) {
           return panel.webview.postMessage({
             command: "info",
@@ -84,7 +92,7 @@ function activate(context) {
           });
         }
 
-        const fullMessage = formatCommit(message.type, message.ticket, aiMessage);
+        const fullMessage = await gitUtils.formatCommit(message.type, message.ticket, aiMessage);
         panel.webview.postMessage({
           command: "commitResult",
           result: fullMessage
@@ -93,7 +101,7 @@ function activate(context) {
 
       if (message.command === "commit") {
         try {
-          await git.commit(message.message);
+          await gitUtils.gitCommit(message.message);
           panel.webview.postMessage({
             command: "info",
             text: "✅ Commit completed successfully!"
@@ -109,27 +117,6 @@ function activate(context) {
   });
 
   context.subscriptions.push(disposable);
-}
-
-function formatCommit(type, ticket, message) {
-  const parts = [];
-  if (ticket) parts.push(ticket);
-  if (type) parts.push(type);
-  return `${parts.join(":")}: ${message}`;
-}
-
-function isOllamaInstalled() {
-  const result = spawnSync("ollama", ["--version"], { encoding: "utf8" });
-  return result.status === 0;
-}
-
-async function isOllamaRunning() {
-  try {
-    const res = await axios.get(OLLAMA_API_URL);
-    return res.status === 200;
-  } catch (err) {
-    return false;
-  }
 }
 
 function deactivate() {}
