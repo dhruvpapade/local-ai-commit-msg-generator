@@ -3,14 +3,13 @@ const { OLLAMA_API_URL_ENDPOINT, AI_MODEL } = require("./config");
 
 async function generateAICommit(diff) {
   try {
-      const prompt = `
-      Based on the following Git diff, generate a simple, fast, short and clean Git commit message.
+     const prompt = `
+      Write a clear Git commit title (15–20 characters) in imperative mood based on the following diff.
 
-      Rules:
-      - Output ONLY the commit message, no explanation or formatting.
-      - Maximum 15 words.
-      - Use imperative tone (e.g., "Fix bug" not "Fixed bug").
-      - Do NOT include quotes, prefixes, labels, or explanations.
+      - Focus only on major technical changes
+      - Be concise and specific
+      - Avoid quotes, filler, or vague terms
+      - Return only the title
 
       Git diff:
       ${diff}
