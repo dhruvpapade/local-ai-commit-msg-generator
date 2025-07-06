@@ -7,6 +7,8 @@ const aiUtils = require("./utils/aiUtils");
 const AI_MODEL = "llama3.2:3b";
 
 function activate(context) {
+  aiService.preloadModel();
+
   const disposable = vscode.commands.registerCommand(
     "extension.generateCommitMessage",
     function () {
@@ -52,7 +54,7 @@ function activate(context) {
           if (!aiUtils.isOllamaRunning(AI_MODEL)) {
             return panel.webview.postMessage({
               command: "info",
-              text: "❌ Ollama is installed but the model is not available.\nPlease run `ollama pull llama3.2:3b` first.",
+              text: `❌ Ollama is installed but the model "${AI_MODEL}" is not available.\nPlease run \`ollama pull ${AI_MODEL}\` first.`,
             });
           }
 

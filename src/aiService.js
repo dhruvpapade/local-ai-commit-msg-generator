@@ -1,43 +1,45 @@
 const { spawnSync } = require("child_process");
 const AI_MODEL = "llama3.2:3b";
 
+function preloadModel() {
+  try {
+    spawnSync("ollama", ["run", AI_MODEL], {
+      input: "Ping",
+      encoding: "utf-8",
+      stdio: "pipe",
+      timeout: 10_000, // optional: fail early if it's too slow
+    });
+    console.log(`✅ Preloaded model: ${AI_MODEL}`);
+  } catch (err) {
+    console.warn(`⚠️ Ollama preload failed:`, err.message);
+  }
+}
+
 function generateAICommit(diff) {
   const prompt = `
-You are an expert AI commit message generator specialized in creating concise, informative commit messages that follow best practices in version control.
+  Write a clear Git commit title (15–20 characters) in imperative mood based on the following diff.
 
-Your ONLY task is to generate a well-structured commit message based on the provided diff. The commit message must:
-1. Use a clear, descriptive title in the imperative mood (20-25 characters max)
-2. Focus solely on the technical changes in the code
-3. Use present tense and be specific about modifications
+  - Focus only on major technical changes
+  - Be concise and specific
+  - Avoid quotes, filler, or vague terms
+  - Return only the title
 
-Key Guidelines:
-- Analyze the entire diff comprehensively
-- Capture the essence of only MAJOR changes
-- Use technical, precise languages
-- Avoid generic or vague descriptions
-- Avoid quoting any words or sentences
-- Avoid adding description for minor changes with not much context
-- Return just the commit message, no additional text
-- Don't return more bullet points
-- Generate a single commit message
+  Git diff:
+  ${diff}
+  `;
 
-Output Format:
-Concise Title Summarizing Changes
-
-- Specific change description
-- Rationale for key modifications
-- Impact of changes
-- Return only the title
-
-Git diff:
-${diff}
-`.trim();
+  const start = Date.now(); // Start timer
 
   const result = spawnSync("ollama", ["run", AI_MODEL], {
     input: prompt,
     encoding: "utf-8",
     maxBuffer: 1024 * 1024
   });
+
+  const end = Date.now(); // End timer
+  const duration = (end - start) / 1000;
+
+  console.log(`⏱️ Commit message generated in ${duration.toFixed(2)} seconds`);
 
   if (result.error) {
     console.error("❌ Ollama error:", result.error.message);
@@ -49,9 +51,14 @@ ${diff}
     return null;
   }
 
-  return result.stdout.trim();
+  const raw = result.stdout.trim();
+  const clean = raw.replace(/[^\w\s-]/g, ""); // optional: clean special chars
+
+  return clean;
 }
 
+
 module.exports = {
+  preloadModel,
   generateAICommit
 };
