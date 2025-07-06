@@ -1,59 +1,72 @@
+const { spawnSync } = require("child_process");
 const vscode = require("vscode");
-const simpleGit = require("simple-git");
 
-const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-const git = simpleGit(rootPath);
+function getRootPath() {
+  return vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath ?? process.cwd();
+}
 
-async function isGitRepoSafe() {
-  try {
-    return await git.checkIsRepo();
-  } catch (err) {
-    return false;
+function isGitRepoSafe() {
+  const rootPath = getRootPath();
+
+  const result = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
+    cwd: rootPath,
+    encoding: "utf-8",
+    stdio: "pipe",
+  });
+
+  return result.status === 0 && result.stdout.trim() === "true";
+}
+
+function hasCodeChanges() {
+  const result = spawnSync("git", ["status", "--porcelain"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  return result.status === 0 && result.stdout.trim().length > 0;
+}
+
+function getGitUnstagedFiles() {
+  const result = spawnSync("git", ["diff", "--name-only"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (result.status !== 0) return [];
+  return result.stdout.trim().split("\n").filter(Boolean);
+}
+
+function getGitDiff() {
+  const result = spawnSync("git", ["diff", "--cached"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+    maxBuffer: 1024 * 1024,
+  });
+
+  return result.status === 0 ? result.stdout.trim() : "";
+}
+
+function formatCommit(type, ticket, message) {
+  const prefix = [ticket?.toUpperCase(), type?.toUpperCase()].filter(Boolean).join(":");
+  return prefix ? `${prefix}: ${message}` : message;
+}
+
+function gitCommit(message) {
+  const result = spawnSync("git", ["commit", "-m", message], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (result.status !== 0) {
+    throw new Error(result.stderr || "Git commit failed");
   }
-}
-
-async function hasCodeChanges() {
-  const status = await git.status();
-  return status.files.length > 0;
-}
-
-async function getGitDiff() {
-  try {
-    diff = await git.diff(['--staged']);
-    return diff;
-  } catch (err) {
-    console.error("Git diff error:", err);
-    return "";
-  }
-}
-
-async function getGitUnstagedFiles() {
-  try {
-    const status = await git.status();
-    const unstagedFiles = status.modified.filter(f => !status.staged.includes(f));
-    return unstagedFiles;
-  } catch (err) {
-    console.error("Git get unstaged files error:", err);
-    return "";
-  }
-}
-
-async function gitCommit(message) {
-    await git.commit(message);
-}
-
-async function formatCommit(type, ticket, message) {
-  const parts = [];
-  if (ticket) parts.push(ticket);
-  if (type) parts.push(type);
-  return `${parts.join(":")}: ${message}`;
 }
 
 module.exports = {
+  isGitRepoSafe,
+  hasCodeChanges,
   getGitUnstagedFiles,
   getGitDiff,
-  isGitRepoSafe,
-  gitCommit,
   formatCommit,
-  hasCodeChanges
+  gitCommit,
 };

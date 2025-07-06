@@ -1,3 +1,8 @@
+const vscode = acquireVsCodeApi();
+const loader = document.getElementById("loader");
+const output = document.getElementById("output");
+const ticketError = document.getElementById("ticketError");
+
 function showMessage(text) {
     const msgEl = document.getElementById("errorMessage");
     msgEl.textContent = text;
@@ -7,11 +12,6 @@ function showMessage(text) {
         msgEl.style.display = "none";
     }, 10000);
 }
-
-const vscode = acquireVsCodeApi();
-const loader = document.getElementById("loader");
-const output = document.getElementById("output");
-const ticketError = document.getElementById("ticketError");
 
 document.getElementById("generateBtn").addEventListener("click", () => {
     const type = document.getElementById("type").value;
