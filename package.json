@@ -18,7 +18,7 @@
     "commands": [
       {
         "command": "extension.generateCommitMessage",
-        "title": "🤖 Local AI-Powered Commit Message Generator"
+        "title": "🚀 Local AI-Powered Commit Message Generator"
       }
     ]
   },

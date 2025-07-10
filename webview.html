@@ -1,52 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-      <meta charset="UTF-8" />
-      <title>AI Commit Message Generator</title>
-      <link rel="stylesheet" href="{{STYLE_URI}}" />
-  </head>
-  <body>
-      <div class="card">
-          <h1>🤖 AI Commit Message Generator</h1>
-          <form id="commitForm">
-              <div>
-                  <label for="type">Commit Type</label>
-                  <select id="type" name="type">
-                      <option value="feat">feat - New feature</option>
-                      <option value="fix">fix - Bug fix</option>
-                      <option value="chore">chore - Maintenance</option>
-                      <option value="refactor">refactor - Code refactor</option>
-                      <option value="docs">docs - Documentation</option>
-                      <option value="test">test - Testing</option>
-                      <option value="style">style - Formatting</option>
-                  </select>
-              </div>
+    <head>
+        <meta charset="UTF-8" />
+        <title>AI Commit Message Generator</title>
+        <link rel="stylesheet" href="{{STYLE_URI}}" />
+    </head>
+    <body>
+        <div class="card">
+            <h1>🤖 AI Commit Message Generator</h1>
+            <form id="commitForm">
+                <div>
+                    <label for="type">Commit Type</label>
+                    <select id="type" name="type">
+                        <option value="feat">feat - New feature</option>
+                        <option value="fix">fix - Bug fix</option>
+                        <option value="chore">chore - Maintenance</option>
+                        <option value="refactor">refactor - Code refactor</option>
+                        <option value="docs">docs - Documentation</option>
+                        <option value="test">test - Testing</option>
+                        <option value="style">style - Formatting</option>
+                    </select>
+                </div>
 
-              <div>
-                  <label for="ticket">Ticket ID</label>
-                  <input type="text" id="ticket" name="ticket" placeholder="e.g., JIRA-1012" />
-                  <div id="ticketError">Please enter Ticket ID</div>
-              </div>
+                <div>
+                    <label for="ticket">Ticket ID</label>
+                    <input type="text" id="ticket" name="ticket" placeholder="e.g., JIRA-1012" />
+                    <div id="ticketError">Please enter Ticket ID</div>
+                </div>
 
-              <div class="buttons">
-                  <button type="button" id="generateBtn">🚀 Generate Message</button>
-                  <button type="button" id="commitBtn">✅ Use as Commit</button>
-              </div>
+                <div class="buttons">
+                    <button type="button" id="generateBtn">🔮 Generate Message</button>
+                    <button type="button" id="commitBtn">✅ Use as Commit</button>
+                </div>
 
-              <div>
-                  <label for="output">Generated Commit Message</label>
-                  <textarea id="output" placeholder="Your commit message will appear here..."></textarea>
-              </div>
+                <div>
+                    <label for="output">Generated Commit Message</label>
+                    <textarea id="output" placeholder="Your commit message will appear here..."></textarea>
+                </div>
 
-              <div id="errorMessage" style="display:none; margin-top: 1rem; color: #ff5f5f; font-weight: 500;"></div>
+                <div id="errorMessage" style="display:none; margin-top: 1rem; color: #ff5f5f; font-weight: 500;"></div>
 
-              <div id="loader">⏳ Generating commit message please wait...</div>
-          </form>
+            <div id="loader" style="display: none;">
+  <div class="spinner"></div>
+  <span class="loader-text">Generating commit message, please wait...</span>
+</div>
 
-          <div class="powered-by">
-              ⚡ Powered by ChittTaranga Team
-          </div>
-      </div>
-      <script src="{{SCRIPT_URI}}"></script>
-  </body>
+
+            </form>
+
+            <div class="powered-by">
+                ⚡ Powered by ChittTaranga Team
+            </div>
+        </div>
+        <script src="{{SCRIPT_URI}}"></script>
+    </body>
 </html>

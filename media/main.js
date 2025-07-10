@@ -14,6 +14,7 @@ function showMessage(text) {
 }
 
 document.getElementById("generateBtn").addEventListener("click", () => {
+    document.getElementById("errorMessage").style.display = "none";
     const type = document.getElementById("type").value;
     const ticket = document.getElementById("ticket").value;
 
@@ -26,7 +27,7 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     }
 
     output.value = ""; // Clear old output
-    loader.style.display = "block";
+    loader.style.display = 'flex';
 
     vscode.postMessage({
         command: "generate",
