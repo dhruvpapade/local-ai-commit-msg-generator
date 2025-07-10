@@ -15,9 +15,9 @@ function preloadModel() {
   }
 }
 
-function generateAICommit(diff) {
+function generateAICommit(diff, type) {
   const prompt = `
-  Write a clear Git commit title (15-20 characters) in imperative mood based on the following diff.
+  Write a clear ${type} Git commit title (15-20 characters) in imperative mood based on the following diff.
 
   - Focus only on major technical changes
   - Be concise and specific

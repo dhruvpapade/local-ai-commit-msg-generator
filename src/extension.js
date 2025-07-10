@@ -90,7 +90,7 @@ function activate(context) {
             });
           }
 
-          const aiMessage = aiService.generateAICommit(diff);
+          const aiMessage = aiService.generateAICommit(diff, message.type);
           if (!aiMessage || aiMessage.length < 5) {
             return panel.webview.postMessage({
               command: "info",
