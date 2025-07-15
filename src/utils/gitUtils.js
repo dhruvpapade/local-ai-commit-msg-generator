@@ -26,6 +26,15 @@ function hasCodeChanges() {
   return result.status === 0 && result.stdout.trim().length > 0;
 }
 
+function isGitStagedFiles() {
+  const result = spawnSync("git", ["diff", "--cached", "--name-only"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  return result.status === 0 && result.stdout;
+}
+
 function getGitUnstagedFiles() {
   const result = spawnSync("git", ["diff", "--name-only"], {
     cwd: getRootPath(),
@@ -65,6 +74,7 @@ function gitCommit(message) {
 module.exports = {
   isGitRepoSafe,
   hasCodeChanges,
+  isGitStagedFiles,
   getGitUnstagedFiles,
   getGitDiff,
   formatCommit,

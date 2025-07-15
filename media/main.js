@@ -1,10 +1,13 @@
 const vscode = acquireVsCodeApi();
 const loader = document.getElementById("loader");
+const timer = document.getElementById("timer");
+const timerText = document.getElementById("timer-text");
 const output = document.getElementById("output");
 const ticketError = document.getElementById("ticketError");
+const msgEl = document.getElementById("errorMessage");
 
 function showMessage(text) {
-    const msgEl = document.getElementById("errorMessage");
+
     msgEl.textContent = text;
     msgEl.style.display = "block";
 
@@ -14,7 +17,8 @@ function showMessage(text) {
 }
 
 document.getElementById("generateBtn").addEventListener("click", () => {
-    document.getElementById("errorMessage").style.display = "none";
+    msgEl.style.display = "none";
+    timer.style.display = "none";
     const type = document.getElementById("type").value;
     const ticket = document.getElementById("ticket").value;
 
@@ -27,7 +31,7 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     }
 
     output.value = ""; // Clear old output
-    loader.style.display = 'flex';
+    loader.style.display = "flex";
 
     vscode.postMessage({
         command: "generate",
@@ -49,7 +53,9 @@ window.addEventListener("message", (event) => {
 
     if (message.command === "commitResult") {
         loader.style.display = "none";
-        output.value = message.result;
+        output.value = message.result.aiMessage;
+        timerText.innerHTML = message.result.duration;
+        timer.style.display = "flex";
     } else if (message.command === "info") {
         loader.style.display = "none";
         showMessage(message.text);

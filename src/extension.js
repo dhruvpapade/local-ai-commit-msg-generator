@@ -72,13 +72,10 @@ function activate(context) {
             });
           }
 
-          const unstagedFiles = gitUtils.getGitUnstagedFiles();
-          if (unstagedFiles.length > 0) {
+          if (!gitUtils.isGitStagedFiles()) {
             return panel.webview.postMessage({
               command: "info",
-              text: `❌ You have unstaged changes:\n${unstagedFiles.join(
-                ", "
-              )}.\nPlease stage them with \"git add\" before proceeding.`,
+              text: `❌ You have unstaged changes,\nPlease stage them with \"git add\" before proceeding.`,
             });
           }
 
@@ -90,8 +87,8 @@ function activate(context) {
             });
           }
 
-          const aiMessage = aiService.generateAICommit(diff, message.type);
-          if (!aiMessage || aiMessage.length < 5) {
+          const aiResponse = aiService.generateAICommit(diff, message.type);
+          if (!aiResponse.aiMessage || aiResponse.aiMessage.length < 5) {
             return panel.webview.postMessage({
               command: "info",
               text: "❌ AI returned an empty or invalid message.",
@@ -101,12 +98,15 @@ function activate(context) {
           const fullMessage = gitUtils.formatCommit(
             message.type,
             message.ticket,
-            aiMessage
+            aiResponse.aiMessage
           );
 
           panel.webview.postMessage({
             command: "commitResult",
-            result: fullMessage,
+            result: {
+              aiMessage: fullMessage,
+              duration: aiResponse.duration
+            },
           });
         }
 

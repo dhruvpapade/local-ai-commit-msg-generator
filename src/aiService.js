@@ -54,7 +54,10 @@ function generateAICommit(diff, type) {
   const raw = result.stdout.trim();
   const clean = raw.replace(/[^\w\s-]/g, ""); // optional: clean special chars
 
-  return clean;
+  return {
+    aiMessage: clean,
+    duration: `${duration.toFixed(2)} seconds`
+  };
 }
 
 
