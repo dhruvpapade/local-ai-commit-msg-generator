@@ -22,7 +22,22 @@ Works completely **offline**, ensures **security**, and improves **developer pro
 
 ## 📥 Installation
 
-### 1. Clone and Install Extension
+### 1. Download and Install ollama Server
+https://ollama.com/ 
+
+Check that the 'llama3.2:3b' AI model is running
+
+```bash
+ollama pull llama3.2:3b
+```
+<img width="894" height="337" alt="image" src="https://github.com/user-attachments/assets/23c76aad-f768-42bd-a94b-f7d6f2949c89" />
+
+```bash
+ollama run llama3.2:3b
+```
+<img width="585" height="241" alt="image" src="https://github.com/user-attachments/assets/6a711f63-061a-4238-9291-d3480a4c78f7" />
+
+### 2. Clone and Install Extension
 
 ```bash
 git clone https://github.com/dhruvpapade/local-ai-commit-msg-generator
