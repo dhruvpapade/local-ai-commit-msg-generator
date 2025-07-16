@@ -56,7 +56,7 @@ function generateAICommit(diff, type) {
 
   return {
     aiMessage: clean,
-    duration: `${duration.toFixed(2)} seconds`
+    duration: ` Commit message generated in ${duration.toFixed(2)} seconds`
   };
 }
 
