@@ -1,67 +1,57 @@
-const { spawnSync } = require("child_process");
-const AI_MODEL = "llama3.2:3b";
+const ollamaClient = require('./ollamaClient');
 
-function preloadModel() {
+async function warmUpModel() {
+  const dummyPrompt = `You are an AI expert to generate concise and informative commit message.`;
+  console.log("⚙️ Warming up AI model...");
+
   try {
-    spawnSync("ollama", ["run", AI_MODEL], {
-      input: "Ping",
-      encoding: "utf-8",
-      stdio: "pipe",
-      timeout: 10_000, // optional: fail early if it's too slow
-    });
-    console.log(`✅ Preloaded model: ${AI_MODEL}`);
+    await ollamaClient.generate(dummyPrompt);
+    console.log("✅ AI model warmed up.");
   } catch (err) {
-    console.warn(`⚠️ Ollama preload failed:`, err.message);
+    console.warn("⚠️ Failed to warm up model:", err.message);
   }
 }
 
-function generateAICommit(diff, type) {
+async function generateAICommit(diff, type) {
   const prompt = `
-  Write a clear ${type} Git commit title (15-20 characters) in imperative mood based on the following diff.
+Write a clear ${type} Git commit title (40-50 characters max) in imperative mood based on the following diff.
 
-  - Focus only on major technical changes
-  - Be concise and specific
-  - Avoid quotes, filler, or vague terms
-  - Return only the title
+Key Guidelines:
+- Focus only on major technical changes
+- Be concise and specific
+- Avoid quotes, filler, or vague terms
+- Return only the title
 
-  Git diff:
-  ${diff}
-  `;
+Git diff:
+${diff}
+  `.trim();
 
-  const start = Date.now(); // Start timer
+  console.log('🚀 Generating commit message...');
+  const startTime = Date.now();
 
-  const result = spawnSync("ollama", ["run", AI_MODEL], {
-    input: prompt,
-    encoding: "utf-8",
-    maxBuffer: 1024 * 1024
-  });
-
-  const end = Date.now(); // End timer
-  const duration = (end - start) / 1000;
-
-  console.log(`⏱️ Commit message generated in ${duration.toFixed(2)} seconds`);
-
-  if (result.error) {
-    console.error("❌ Ollama error:", result.error.message);
-    return null;
+  let commitMessage;
+  try {
+    commitMessage = await ollamaClient.generate(prompt);
+  } catch (err) {
+    console.error('❌ Ollama error:', err.message);
+    return {
+      aiMessage: '',
+      duration: 'Failed to generate message',
+    };
   }
 
-  if (result.status !== 0) {
-    console.error("⚠️ Ollama failed:", result.stderr);
-    return null;
-  }
+  const duration = ((Date.now() - startTime) / 1000).toFixed(2); // in seconds
+  const cleanMessage = commitMessage?.trim();
 
-  const raw = result.stdout.trim();
-  const clean = raw.replace(/[^\w\s-]/g, ""); // optional: clean special chars
+  console.log(`⏱️ Commit message generated in ${duration} seconds`);
 
   return {
-    aiMessage: clean,
-    duration: ` Commit message generated in ${duration.toFixed(2)} seconds`
+    aiMessage: cleanMessage || '',
+    duration: `Commit message generated in ${duration} seconds`,
   };
 }
 
-
 module.exports = {
-  preloadModel,
-  generateAICommit
+  warmUpModel,
+  generateAICommit,
 };

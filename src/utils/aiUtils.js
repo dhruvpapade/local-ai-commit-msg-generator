@@ -5,7 +5,7 @@ function isOllamaInstalled() {
   return result.status === 0;
 }
 
-function isOllamaRunning(model = "llama3.2:3b") {
+function isOllamaRunning(model) {
   const result = spawnSync("ollama", ["list"], { encoding: "utf8" });
   if (result.status !== 0 || !result.stdout) return false;
   return result.stdout.toLowerCase().includes(model.toLowerCase());
