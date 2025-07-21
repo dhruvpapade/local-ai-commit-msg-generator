@@ -41,8 +41,18 @@ async function warmUpModel() {
  * @returns {Promise<{aiMessage: string, duration: string}>}
  */
 async function generateAICommit(diff, type) {
+    const typePrompts = {
+    feat: "Write a clear, imperative Git commit title (40-50 characters max) describing a new feature in imperative mood based on the following diff.",
+    fix: "Write a concise Git commit title (40-50 characters max) describing what bug was fixed in imperative mood based on the following diff.",
+    chore: "Write a commit title (40-50 characters max) for a non-functional update like dependency or config changes in imperative mood based on the following diff.",
+    refactor: "Write a commit title (40-50 characters max) for a code refactor (without changing functionality) in imperative mood based on the following diff.",
+    docs: "Write a commit title (40-50 characters max) for documentation updates in imperative mood based on the following diff.",
+    test: "Write a commit title (40-50 characters max) for test case additions or modifications in imperative mood based on the following diff.",
+    style: "Write a commit title (40-50 characters max) for formatting or style-only code changes in imperative mood based on the following diff.",
+  };
+  
   const prompt = `
-Write a clear ${type} Git commit title (40-50 characters max) in imperative mood based on the following diff.
+${typePrompts[type]}
 
 Key Guidelines:
 - Focus only on major technical changes
