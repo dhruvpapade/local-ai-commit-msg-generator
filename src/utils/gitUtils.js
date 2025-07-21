@@ -91,7 +91,26 @@ function getGitDiff() {
     maxBuffer: 1024 * 1024, // 1 MB buffer
   });
 
-  return result.status === 0 ? result.stdout.trim() : "";
+  if (result.status !== 0) return "";
+
+  let diff = result.stdout.trim();
+  // Remove added lines with variable declarations (const, let, var), require, import, include
+  diff = diff.split("\n").filter(line => {
+    const isDiffMeta = line.startsWith("+++") || line.startsWith("---");
+    const isCodeLine = line.startsWith("+") || line.startsWith("-");
+    if (!isCodeLine || isDiffMeta) return true;
+
+    const trimmed = line.slice(1).trim();
+
+    // Remove blank lines and unwanted patterns
+    return trimmed !== "" &&
+           !/^(const|let|var)\s/.test(trimmed) &&
+           !/^import\s/.test(trimmed) &&
+           !/require\(/.test(trimmed) &&
+           !/include\s/.test(trimmed);
+  })
+  .join("\n");
+  return diff;
 }
 
 /**
