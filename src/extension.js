@@ -159,10 +159,10 @@ async function activate(context) {
 
               if (message.command === "commit") {
                 try {
-                  gitUtils.gitCommit(message.message);
+                  gitUtils.gitCommitAndPush(message.message);
                   panel.webview.postMessage({
                     command: "info",
-                    text: "✅ Commit completed successfully!",
+                    text: "✅ Commit and push successful!",
                   });
                 } catch (e) {
                   panel.webview.postMessage({
@@ -171,6 +171,7 @@ async function activate(context) {
                   });
                 }
               }
+
             } catch (msgErr) {
               panel.webview.postMessage({
                 command: "info",

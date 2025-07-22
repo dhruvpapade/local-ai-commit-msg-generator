@@ -126,25 +126,48 @@ function getGitDiff() {
  */
 function formatCommit(type, ticket, message) {
   const prefix = [ticket?.toUpperCase(), type?.toUpperCase()].filter(Boolean).join(":");
-  return prefix ? `${prefix}: ${message}` : message;
+  const [titleLine, ...descriptionLines] = message.split('\n');
+  const title = titleLine.replace(/^Title:\s*/, '').trim();
+  const description = descriptionLines.join('\n').replace(/^Description:\s*/m, '').trim();
+
+  return {
+    title : prefix ? `${prefix}: ${title}` : title,
+    description: description
+  }
 }
 
 /**
- * Performs a `git commit -m "<message>"`
+ * Commits staged changes and pushes them to the remote repository.
  *
- * @param {string} message - Commit message
- * @throws Error if git commit fails
+ * Performs a `git commit -m "<message>"` followed by `git push`.
+ *
+ * @param {string} message - The commit message to use.
+ * @throws {Error} If the commit or push operation fails.
  */
-function gitCommit(message) {
-  const result = spawnSync("git", ["commit", "-m", message], {
+function gitCommitAndPush(message) {
+  // Step 1: Commit
+  const commitResult = spawnSync("git", ["commit", "-m", message], {
     cwd: getRootPath(),
     encoding: "utf-8",
   });
 
-  if (result.status !== 0) {
-    throw new Error(result.stderr || "Git commit failed");
+  if (commitResult.status !== 0) {
+    throw new Error(commitResult.stderr || "Git commit failed");
   }
+
+  // Step 2: Push
+  const pushResult = spawnSync("git", ["push"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (pushResult.status !== 0) {
+    throw new Error(pushResult.stderr || "Git push failed");
+  }
+
+  console.log("✅ Commit and push successful.");
 }
+
 
 // Exporting all utility functions
 module.exports = {
@@ -154,7 +177,7 @@ module.exports = {
   getGitUnstagedFiles,
   getGitDiff,
   formatCommit,
-  gitCommit,
+  gitCommitAndPush,
 };
 
 /**

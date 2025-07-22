@@ -42,25 +42,38 @@ async function warmUpModel() {
  */
 async function generateAICommit(diff, type) {
     const typePrompts = {
-    feat: "Write a clear, imperative Git commit title (40-50 characters max) describing a new feature in imperative mood based on the following diff.",
-    fix: "Write a concise Git commit title (40-50 characters max) describing what bug was fixed in imperative mood based on the following diff.",
-    chore: "Write a commit title (40-50 characters max) for a non-functional update like dependency or config changes in imperative mood based on the following diff.",
-    refactor: "Write a commit title (40-50 characters max) for a code refactor (without changing functionality) in imperative mood based on the following diff.",
-    docs: "Write a commit title (40-50 characters max) for documentation updates in imperative mood based on the following diff.",
-    test: "Write a commit title (40-50 characters max) for test case additions or modifications in imperative mood based on the following diff.",
-    style: "Write a commit title (40-50 characters max) for formatting or style-only code changes in imperative mood based on the following diff.",
+      feat: "Write a clear, imperative Git commit title (40-50 characters max) and Description describing a new feature in imperative mood based on the following diff.",
+      fix: "Write a concise Git commit title (40-50 characters max) and Description describing what bug was fixed in imperative mood based on the following diff.",
+      chore: "Write a Git commit title (40-50 characters max) and Description for a non-functional update like dependency or config changes in imperative mood based on the following diff.",
+      refactor: "Write a Git commit title (40-50 characters max) and Description for a code refactor (without changing functionality) in imperative mood based on the following diff.",
+      docs: "Write a Git commit title (40-50 characters max) and Description for documentation updates in imperative mood based on the following diff.",
+      test: "Write a Git commit title (40-50 characters max) and Description for test case additions or modifications in imperative mood based on the following diff.",
+      style: "Write a Git commit title (40-50 characters max) and Description for formatting or style-only code changes in imperative mood based on the following diff.",
   };
   
   const prompt = `
 ${typePrompts[type]}
+1. Use a clear, descriptive title in the imperative mood
+2. Provide a detailed explanation of changes in bullet points
+3. Focus solely on the technical changes in the code
+4. Use present tense and be specific about modifications
 
-Key Guidelines:
-- Focus only on major technical changes
-- Be concise and specific
-- Avoid quotes, filler, or vague terms
-- Return only the title
+Key Guidelines:-
+- Analyze the entire diff comprehensively
+- Capture the essence of only MAJOR changes
+- Use technical, precise languages
+- Avoid generic or vague descriptions
+- Avoid quoting any words or sentences
+- Avoid adding description for minor changes with not much context
+- Return just the commit message, no additional text
+- return description in bullet points
 
-Git diff:
+please return output in below format:-
+
+Title: 
+Description: 
+
+Git diff:-
 ${diff}
   `.trim();
 

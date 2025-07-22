@@ -29,13 +29,18 @@
                 </div>
 
                 <div class="buttons">
-                    <button type="button" id="generateBtn">🔮 Generate Message</button>
-                    <button type="button" id="commitBtn">✅ Commit</button>
+                    <button type="button" id="generateBtn">✨ AI Analyze & Suggest Message</button>
+                     <button type="button" id="commitBtn">⚡ Commit</button>
                 </div>
 
                 <div>
-                    <label for="output">Generated Commit Message</label>
-                    <textarea id="output" placeholder="Your commit message will appear here..."></textarea>
+                    <label for="commitTitle">Generated Commit Message / PR Title</label>
+                    <textarea id="commitTitle" placeholder="Your commit message will appear here..."></textarea>
+                </div>
+
+                <div>
+                    <label for="prDescription">Generated PR Description</label>
+                    <textarea id="prDescription" placeholder="Your PR description will appear here..."></textarea>
                 </div>
 
                 <div id="errorMessage" style="display:none; margin-top: 1rem; color: #ff5f5f; font-weight: 500;"></div>

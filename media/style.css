@@ -32,7 +32,7 @@ body {
     border-radius: var(--radius);
     padding: 2rem;
     width: 100%;
-    max-width: 640px;
+    max-width: 896px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
     transition: box-shadow var(--transition);
@@ -43,7 +43,7 @@ body {
 }
 
 h1 {
-    font-size: 1.75rem;
+    font-size: 1.50rem;
     margin-bottom: 1.5rem;
     color: var(--accent);
     text-align: center;
@@ -81,8 +81,13 @@ textarea:focus {
     box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3);
 }
 
-textarea {
-    height: 120px;
+#commitTitle {
+    height: 60px;
+    resize: vertical;
+}
+
+#prDescription {
+    height: 180px;
     resize: vertical;
 }
 

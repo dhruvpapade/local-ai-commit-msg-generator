@@ -2,9 +2,12 @@ const vscode = acquireVsCodeApi();
 const loader = document.getElementById("loader");
 const timer = document.getElementById("timer");
 const timerText = document.getElementById("timer-text");
-const output = document.getElementById("output");
+const commitTitle = document.getElementById("commitTitle");
+const prDescription = document.getElementById("prDescription");
 const ticketError = document.getElementById("ticketError");
 const msgEl = document.getElementById("errorMessage");
+const generateBtn = document.getElementById("generateBtn");
+const commitBtn = document.getElementById("commitBtn");
 
 function showMessage(text) {
 
@@ -30,7 +33,8 @@ document.getElementById("generateBtn").addEventListener("click", () => {
         ticketError.style.display = "none";
     }
 
-    output.value = ""; // Clear old output
+    commitTitle.value = ""; // Clear old commitTitle
+    prDescription.value = ""; // Clear old prDescription
     loader.style.display = "flex";
 
     vscode.postMessage({
@@ -41,7 +45,7 @@ document.getElementById("generateBtn").addEventListener("click", () => {
 });
 
 document.getElementById("commitBtn").addEventListener("click", () => {
-    const msg = output.value;
+    const msg = commitTitle.value;
     vscode.postMessage({
         command: "commit",
         message: msg
@@ -53,9 +57,12 @@ window.addEventListener("message", (event) => {
 
     if (message.command === "commitResult") {
         loader.style.display = "none";
-        output.value = message.result.aiMessage;
+        commitTitle.value = message.result.aiMessage.title;
+        prDescription.value = message.result.aiMessage.description;
         timerText.innerHTML = message.result.duration;
         timer.style.display = "flex";
+        generateBtn.disabled = false;
+        commitBtn.disabled = false;
     } else if (message.command === "info") {
         loader.style.display = "none";
         showMessage(message.text);
