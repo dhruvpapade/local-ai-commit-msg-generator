@@ -168,6 +168,134 @@ function gitCommitAndPush(message) {
   console.log("✅ Commit and push successful.");
 }
 
+/**
+ * Checks if the GitHub CLI is installed on the system.
+ *
+ * @returns {boolean} - Returns true if the GitHub CLI is available; false if it's missing or inaccessible.
+ */
+function isGitHubAuthAvailable() {
+  const result = spawnSync("gh", ["auth", "status"], {
+    encoding: "utf-8",
+  });
+
+  if (result.error) {
+    console.error("GitHub CLI not found:", result.error.message);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Removes references to remote branches that have been deleted from the origin.
+ *
+ * @param {string} cwd - The working directory where the Git command should be executed.
+ * @returns {boolean} - Returns true if pruning was successful; false otherwise.
+ */
+function pruneDeletedRemoteBranches(cwd) {
+  const result = spawnSync("git", ["remote", "prune", "origin"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (result.status !== 0) {
+    console.error("Failed to prune branches:", result.stderr);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Retrieves all active remote Git branches after pruning deleted ones.
+ *
+ * @returns {string[]} - An array of branch names without the 'origin/' prefix.
+ */
+function getAllBranches() {
+  pruneDeletedRemoteBranches();
+  const result = spawnSync("git", ["branch", "-r", "--format=%(refname:short)"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (result.status !== 0) {
+    console.error("Failed to fetch branches:", result.stderr);
+    return [];
+  }
+
+  // Parse and clean branch names
+  return result.stdout
+    .split("\n")
+    .map(line => line.trim().replace(/^\* /, ""))
+    .filter(branch => branch.length > 0)
+    .map(branch => branch.replace(/^origin\//, "")); // Remove 'origin/' prefix
+
+}
+
+/**
+ * Retrieves the name of the current Git branch.
+ *
+ * @returns {string|null} - The current branch name, or null if the operation fails.
+ */
+function getCurrentBranch() {
+  const result = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (result.status !== 0) {
+    console.error("Failed to get current branch:", result.stderr);
+    return null;
+  }
+
+  return result.stdout.trim();
+}
+
+/**
+ * Creates a pull request on GitHub using the GitHub CLI.
+ *
+ * @param {string} prTitle - Title of the pull request.
+ * @param {string} prBody - Body content of the pull request.
+ * @param {string} base - The base branch to merge into.
+ * @returns {{success: boolean, prUrl?: string, error?: string}} - Result of the PR creation with either a URL or an error message.
+ */
+function createPR(prTitle, prBody, base) {
+  const head = getCurrentBranch() || '';
+  const result = spawnSync("gh", [
+    'pr', 'create',
+    '--base', base, 
+    '--head', head, 
+    '--title', prTitle,
+    '--body', prBody
+  ],
+  {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (result.error) {
+    console.error("Spawn error:", result.error.message);
+    return {
+      success: false,
+      error: result.error.message
+    };
+  }
+
+  if (result.status !== 0) {
+    console.error("PR creation failed:", result.stderr);
+    return {
+      success: false,
+      error: result.stderr
+    };
+  }
+
+  const url = result.stdout.trim(); // URL of created PR
+  console.log("PR created:", url);
+  return {
+      success: true,
+      prUrl: url
+    };
+}
 
 // Exporting all utility functions
 module.exports = {
@@ -178,6 +306,9 @@ module.exports = {
   getGitDiff,
   formatCommit,
   gitCommitAndPush,
+  isGitHubAuthAvailable,
+  createPR,
+  getAllBranches
 };
 
 /**

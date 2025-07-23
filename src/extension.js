@@ -172,6 +172,47 @@ async function activate(context) {
                 }
               }
 
+              if (message.command === "createPR") {
+                try {
+                  // 1. Check GitHub auth
+                  if (!gitUtils.isGitHubAuthAvailable()) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text: "❌ GitHub CLI is not authenticated. Please run `gh auth login` in the terminal.",
+                    });
+                  }
+
+                  // 2. Create PR (assumes title/body are sent from WebView)
+                  const resp = gitUtils.createPR(message.prTitle, message.prBody, message.baseBranch);
+
+                  if (!resp.success) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text: `❌ Failed: ${resp.error}`,
+                    });
+                  }
+
+                  // 3. Respond with success & PR URL
+                  panel.webview.postMessage({
+                    command: "info",
+                    text: `✅ PR created successfully:\n ${resp.prUrl}`,
+                  });
+
+                } catch (e) {
+                  panel.webview.postMessage({
+                    command: "info",
+                    text: "❌ Failed: " + e.message,
+                  });
+                }
+              }
+
+              if (message.command === "getBranches") {
+                const branches = gitUtils.getAllBranches();
+                panel.webview.postMessage({
+                  command: "branches",
+                  data: branches,
+                });
+              }
             } catch (msgErr) {
               panel.webview.postMessage({
                 command: "info",

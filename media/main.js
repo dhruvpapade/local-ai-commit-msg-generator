@@ -6,20 +6,17 @@ const commitTitle = document.getElementById("commitTitle");
 const prDescription = document.getElementById("prDescription");
 const ticketError = document.getElementById("ticketError");
 const msgEl = document.getElementById("errorMessage");
+const baseBranch = document.getElementById("baseBranch");
 const generateBtn = document.getElementById("generateBtn");
 const commitBtn = document.getElementById("commitBtn");
+const createPRBtn = document.getElementById("createPRBtn");
 
 function showMessage(text) {
-
     msgEl.textContent = text;
     msgEl.style.display = "block";
-
-    setTimeout(() => {
-        msgEl.style.display = "none";
-    }, 10000);
 }
 
-document.getElementById("generateBtn").addEventListener("click", () => {
+generateBtn.addEventListener("click", () => {
     msgEl.style.display = "none";
     timer.style.display = "none";
     const type = document.getElementById("type").value;
@@ -44,11 +41,20 @@ document.getElementById("generateBtn").addEventListener("click", () => {
     });
 });
 
-document.getElementById("commitBtn").addEventListener("click", () => {
+commitBtn.addEventListener("click", () => {
     const msg = commitTitle.value;
     vscode.postMessage({
         command: "commit",
         message: msg
+    });
+});
+
+createPRBtn.addEventListener("click", () => {
+    vscode.postMessage({
+        command: "createPR",
+        prTitle : commitTitle.value,
+        prBody : prDescription.value,
+        baseBranch : baseBranch.value
     });
 });
 
@@ -67,5 +73,21 @@ window.addEventListener("message", (event) => {
         loader.style.display = "none";
         showMessage(message.text);
     }
+
+    if (message.command === "branches") {
+        const select = document.getElementById("baseBranch");
+        select.innerHTML = ""; // Clear existing options
+
+        message.data.forEach(branch => {
+            const opt = document.createElement("option");
+            opt.value = branch;
+            opt.textContent = branch;
+            select.appendChild(opt);
+        });
+    }
 });
 
+// Trigger fetch on load
+window.onload = () => {
+  vscode.postMessage({ command: "getBranches" });
+};
