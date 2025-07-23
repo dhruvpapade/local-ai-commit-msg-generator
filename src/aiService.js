@@ -22,12 +22,19 @@ const ollamaClient = require('./ollamaClient');
  * @returns {Promise<void>}
  */
 async function warmUpModel() {
-  const dummyPrompt = `You are an AI expert to generate concise and informative commit message.`;
+  const dummyPrompt = `Summarize: Add logging to API handler.`;
   console.log("⚙️ Warming up AI model...");
 
+  const start = Date.now();
+
   try {
-    await ollamaClient.generate(dummyPrompt);
-    console.log("✅ AI model warmed up.");
+    const result = await ollamaClient.generate(dummyPrompt);
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    console.log(`✅ AI model warmed up. Response time: ${duration} seconds`);
+
+    // Optional: log first few words to confirm output quality
+    console.log("🔹 Output preview:", result?.slice(0, 50));
   } catch (err) {
     console.warn("⚠️ Failed to warm up model:", err.message);
   }
@@ -41,40 +48,32 @@ async function warmUpModel() {
  * @returns {Promise<{aiMessage: string, duration: string}>}
  */
 async function generateAICommit(diff, type) {
-    const typePrompts = {
-      feat: "Write a clear, imperative Git commit title (40-50 characters max) and Description describing a new feature in imperative mood based on the following diff.",
-      fix: "Write a concise Git commit title (40-50 characters max) and Description describing what bug was fixed in imperative mood based on the following diff.",
-      chore: "Write a Git commit title (40-50 characters max) and Description for a non-functional update like dependency or config changes in imperative mood based on the following diff.",
-      refactor: "Write a Git commit title (40-50 characters max) and Description for a code refactor (without changing functionality) in imperative mood based on the following diff.",
-      docs: "Write a Git commit title (40-50 characters max) and Description for documentation updates in imperative mood based on the following diff.",
-      test: "Write a Git commit title (40-50 characters max) and Description for test case additions or modifications in imperative mood based on the following diff.",
-      style: "Write a Git commit title (40-50 characters max) and Description for formatting or style-only code changes in imperative mood based on the following diff.",
+  const typePrompts = {
+    feat: "Generate a clear, imperative Git commit title (max 50 characters) and a bullet-points description for a new feature from the diff below.",
+    fix: "Generate a concise Git commit title (max 50 characters) and a bullet-points description for a bug fix from the diff below.",
+    chore: "Generate a Git commit title (max 50 characters) and bullet-points description for non-functional changes (e.g., configs, dependencies) from the diff below.",
+    refactor: "Generate a Git commit title (max 50 characters) and bullet-points description for a code refactor (no functional change) from the diff below.",
+    docs: "Generate a Git commit title (max 50 characters) and bullet-points description for documentation updates from the diff below.",
+    test: "Generate a Git commit title (max 50 characters) and bullet-points description for added/updated test cases from the diff below.",
+    style: "Generate a Git commit title (max 50 characters) and bullet-points description for formatting/styling changes from the diff below.",
   };
-  
+
   const prompt = `
-${typePrompts[type]}
-1. Use a clear, descriptive title in the imperative mood
-2. Provide a detailed explanation of changes in bullet points
-3. Focus solely on the technical changes in the code
-4. Use present tense and be specific about modifications
+  ${typePrompts[type]}
 
-Key Guidelines:-
-- Analyze the entire diff comprehensively
-- Capture the essence of only MAJOR changes
-- Use technical, precise languages
-- Avoid generic or vague descriptions
-- Avoid quoting any words or sentences
-- Avoid adding description for minor changes with not much context
-- Return just the commit message, no additional text
-- return description in bullet points
+  Instructions:
+  - Summarize only **major** changes from the full diff.
+  - Use concise, technical language.
+  - Skip minor or low-context edits.
+  - Use imperative mood (e.g., "Add", "Fix", "Refactor").
 
-please return output in below format:-
+  - Output only in the following format:
 
-Title: 
-Description: 
+  Title:
+  Description:
 
-Git diff:-
-${diff}
+  use below git diff:
+  ${diff}
   `.trim();
 
   console.log('🚀 Generating commit message...');
