@@ -67,10 +67,11 @@ window.addEventListener("message", (event) => {
         prDescription.value = message.result.aiMessage.description;
         timerText.innerHTML = message.result.duration;
         timer.style.display = "flex";
-        generateBtn.disabled = false;
-        commitBtn.disabled = false;
     } else if (message.command === "info") {
         loader.style.display = "none";
+        if(message.success) {
+            document.getElementById("ouput-section").style.display = "none";
+        }
         showMessage(message.text);
     }
 

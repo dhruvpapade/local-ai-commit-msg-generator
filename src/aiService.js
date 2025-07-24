@@ -68,11 +68,10 @@ async function generateAICommit(diff, type) {
   - Use imperative mood (e.g., "Add", "Fix", "Refactor").
 
   - Output only in the following format:
-
   Title:
   Description:
 
-  use below git diff:
+  Use below git diff:
   ${diff}
   `.trim();
 

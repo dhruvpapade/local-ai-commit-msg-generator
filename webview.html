@@ -33,21 +33,23 @@
                      <button type="button" id="commitBtn">⚡ Commit</button>
                 </div>
 
-                <div>
-                    <label for="commitTitle">Generated Commit Message / PR Title</label>
-                    <textarea id="commitTitle" placeholder="Your commit message will appear here..."></textarea>
-                </div>
+                <div id="ouput-section">
+                    <div>
+                        <label for="commitTitle">Generated Commit Message / PR Title</label>
+                        <textarea id="commitTitle" placeholder="Your commit message will appear here..."></textarea>
+                    </div>
 
-                <div>
-                    <label for="prDescription">Generated PR Description</label>
-                    <textarea id="prDescription" placeholder="Your PR description will appear here..."></textarea>
-                </div>
-
-                <div class="buttons">
-                    <select id="baseBranch" name="baseBranch">
-                        <option value=""></option>
-                    </select>
-                    <button type="button" id="createPRBtn">✨ Create PR </button>
+                    <div>
+                        <label for="prDescription">Generated PR Description</label>
+                        <textarea id="prDescription" placeholder="Your PR description will appear here..."></textarea>
+                    </div>
+    
+                    <div class="buttons">
+                        <select id="baseBranch" name="baseBranch">
+                            <option value=""></option>
+                        </select>
+                        <button type="button" id="createPRBtn">✨ Create PR </button>
+                    </div>
                 </div>
 
                 <div id="errorMessage" style="display:none; margin-top: 1rem; color: #ff5f5f; font-weight: 500;"></div>

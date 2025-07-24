@@ -194,6 +194,7 @@ async function activate(context) {
 
                   // 3. Respond with success & PR URL
                   panel.webview.postMessage({
+                    success: true,
                     command: "info",
                     text: `✅ PR created successfully:\n ${resp.prUrl}`,
                   });
