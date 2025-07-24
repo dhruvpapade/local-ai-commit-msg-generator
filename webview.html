@@ -27,25 +27,48 @@
                     <input type="text" id="ticket" name="ticket" placeholder="e.g., JIRA-1012" />
                     <div id="ticketError">Please enter Ticket ID</div>
                 </div>
+				
+				<div id="commitSection">
+					<div class="buttons">
+						<button type="button" id="generateCommitBtn">✨ Analyze & Suggest Commit</button>
+					</div>
 
-                <div class="buttons">
-                    <button type="button" id="generateBtn">🔮 Generate Message</button>
-                    <button type="button" id="commitBtn">✅ Commit</button>
-                </div>
+					<div>
+						<label for="commitTitle">Generated Commit Message</label>
+						<textarea id="commitTitle" placeholder="Your commit message will appear here..."></textarea>
+					</div>
+					
+					<div class="buttons">
+						<button type="button" id="commitBtn">✅ Commit and Push</button>
+					</div>
+				</div>
+				
+				<div id="prSection">
+					<div class="buttons">
+						<button type="button" id="generatePRBtn">✨ Suggest Description</button>
+					</div>
 
-                <div>
-                    <label for="output">Generated Commit Message</label>
-                    <textarea id="output" placeholder="Your commit message will appear here..."></textarea>
-                </div>
-
-                <div id="errorMessage" style="display:none; margin-top: 1rem; color: #ff5f5f; font-weight: 500;"></div>
+					<div>
+						<label for="prDescription">Generated PR Description</label>
+						<textarea id="prDescription" placeholder="Your PR description will appear here..."></textarea>
+					</div>
+					
+					<div class="buttons">
+						<select id="baseBranch" name="baseBranch" style="width: auto;">
+							<option value="fff">ffff</option>
+						</select>
+						<button type="button" id="createPRBtn">✅ Create PR</button>
+					</div>
+				</div>
+				
+                <div id="errorMessage"></div>
 
                 <div id="loader" style="display: none;">
                     <div class="spinner"></div>
                     <span class="loader-text">Generating commit message, please wait...</span>
                 </div>
 
-                <div id="timer" style="display: none;">
+				<div id="timer" style="display: none;">
                     <div>⏱️ </div>
                     <span id="timer-text"></span>
                 </div>

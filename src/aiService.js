@@ -1,125 +1,137 @@
 // aiCommitGenerator.js
 
-/**
- * ============================================================================
- * AI Commit Message Generator using Ollama
- * ============================================================================
- * This module uses an AI model (via Ollama) to generate concise and well-structured
- * Git commit messages based on Git diffs.
- *
- * Dependencies:
- * - Ollama Client (local API)
- * - Node.js (v14+ recommended)
- * ============================================================================
- */
-
 const ollamaClient = require('./ollamaClient');
 
-/**
- * Warm up the Ollama model with a simple dummy prompt.
- * This helps reduce first-response latency.
- *
- * @returns {Promise<void>}
- */
-async function warmUpModel() {
-  const dummyPrompt = `You are an AI expert to generate concise and informative commit message.`;
-  console.log("⚙️ Warming up AI model...");
-
-  try {
-    await ollamaClient.generate(dummyPrompt);
-    console.log("✅ AI model warmed up.");
-  } catch (err) {
-    console.warn("⚠️ Failed to warm up model:", err.message);
+class AIService {
+  constructor() {
+    this.diff = '';
   }
-}
 
-/**
- * Generate a commit message using the AI model based on a given diff.
- *
- * @param {string} diff - Git diff output (staged changes)
- * @param {string} type - Commit type (e.g., "feature", "fix", "refactor")
- * @returns {Promise<{aiMessage: string, duration: string}>}
- */
-async function generateAICommit(diff, type) {
+  /**
+   * Set the git diff to be used by the generator.
+   * @param {string} diff
+   */
+  setDiff(diff) {
+    this.diff = diff?.trim();
+  }
+
+  /**
+   * Warm up the Ollama model with a dummy prompt.
+   */
+  async warmUpModel() {
+    const dummyPrompt = `You are an AI expert to generate concise and informative commit message.`;
+    console.log("⚙️ Warming up AI model...");
+    const startTime = Date.now();
+
+    try {
+      await ollamaClient.generate(dummyPrompt);
+      const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+      console.log(`✅ AI model warmed up in ${duration} seconds`);
+    } catch (err) {
+      console.warn("⚠️ Failed to warm up model:", err.message);
+    }
+  }
+
+  /**
+   * Generate a commit message from the current diff and commit type.
+   * @param {string} type - Commit type (e.g., feat, fix, chore)
+   * @returns {Promise<{ aiMessage: string, duration: string }>}
+   */
+  async generateCommitMessage(type) {
+    if (!this.diff) {
+      console.warn("⚠️ No diff provided. Call setDiff(diff) first.");
+      return { aiMessage: '', duration: 'No diff provided' };
+    }
+
     const typePrompts = {
-    feat: "Write a clear, imperative Git commit title (40-50 characters max) describing a new feature in imperative mood based on the following diff.",
-    fix: "Write a concise Git commit title (40-50 characters max) describing what bug was fixed in imperative mood based on the following diff.",
-    chore: "Write a commit title (40-50 characters max) for a non-functional update like dependency or config changes in imperative mood based on the following diff.",
-    refactor: "Write a commit title (40-50 characters max) for a code refactor (without changing functionality) in imperative mood based on the following diff.",
-    docs: "Write a commit title (40-50 characters max) for documentation updates in imperative mood based on the following diff.",
-    test: "Write a commit title (40-50 characters max) for test case additions or modifications in imperative mood based on the following diff.",
-    style: "Write a commit title (40-50 characters max) for formatting or style-only code changes in imperative mood based on the following diff.",
-  };
-  
-  const prompt = `
-${typePrompts[type]}
-
-Key Guidelines:
-- Focus only on major technical changes
-- Be concise and specific
-- Avoid quotes, filler, or vague terms
-- Return only the title
-
-Git diff:
-${diff}
-  `.trim();
-
-  console.log('🚀 Generating commit message...');
-  const startTime = Date.now();
-
-  let commitMessage;
-  try {
-    commitMessage = await ollamaClient.generate(prompt);
-  } catch (err) {
-    console.error('❌ Ollama error:', err.message);
-    return {
-      aiMessage: '',
-      duration: 'Failed to generate message',
+      feat: "Generate a clear, imperative Git commit title (max 50 characters) describing a new feature.",
+      fix: "Generate a concise Git commit title (max 50 characters) describing what bug was fixed.",
+      chore: "Generate a commit title (max 50 characters) for a non-functional update like dependency or config changes.",
+      refactor: "Generate a commit title (max 50 characters) for a code refactor (without changing functionality).",
+      docs: "Generate a commit title (max 50 characters) for documentation updates.",
+      test: "Generate a commit title (max 50 characters) for test case additions or modifications.",
+      style: "Generate a commit title (max 50 characters) for formatting or style-only code changes.",
     };
+
+    const prompt = `
+    ${typePrompts[type]}
+    Key Guidelines:
+    - Focus only on major technical changes
+    - Be concise and specific
+    - Avoid quotes, filler, or vague terms
+    - Return only the title
+
+    Git diff:
+    ${this.diff}
+        `.trim();
+
+    console.log('🚀 Generating commit message...');
+    const startTime = Date.now();
+
+    try {
+      const commitMessage = await ollamaClient.generate(prompt);
+      const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+      console.log(`⏱️ Commit message generated in ${duration} seconds`);
+
+      return {
+        aiMessage: commitMessage?.replace(/[^\w\s-]/g, "").trim() || '',
+        duration: `Commit message generated in ${duration} seconds`
+      };
+    } catch (err) {
+      console.error('❌ Ollama error:', err.message);
+      return {
+        aiMessage: '',
+        duration: 'Failed to generate message'
+      };
+    }
   }
 
-  const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-  const cleanMessage = commitMessage?.trim();
+  /**
+   * Generate a PR description from the current diff.
+   * @returns {Promise<{ aiMessage: string, duration: string }>}
+   */
+  async generatePRDescription() {
+    if (!this.diff) {
+      console.warn("⚠️ No diff provided. Call setDiff(diff) first.");
+      return { aiMessage: '', duration: 'No diff provided' };
+    }
 
-  console.log(`⏱️ Commit message generated in ${duration} seconds`);
+    const prompt = `
+    Generate a concise pull request description using only bullet points.
 
-  return {
-    aiMessage: cleanMessage || '',
-    duration: `Commit message generated in ${duration} seconds`,
-  };
+    Instructions:
+    - Output ONLY meaningful technical bullet points.
+    - Do NOT include any headings, explanations, or notes.
+    - Skip minor changes and focus on major improvements or fixes.
+    - Avoid phrases like "Description", "Note", or any extra context outside the bullets.
+
+    Git diff:
+    ${this.diff}
+        `.trim();
+
+    console.log('🚀 Generating PR description...');
+    const startTime = Date.now();
+
+    try {
+      const description = await ollamaClient.generate(prompt);
+      const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+      console.log(`⏱️ Commit message generated in ${duration} seconds`);
+
+      return {
+        aiMessage: description?.trim() || '',
+        duration: `Description generated in ${duration} seconds`
+      };
+    } catch (err) {
+      console.error('❌ Ollama error:', err.message);
+      return {
+        aiMessage: '',
+        duration: 'Failed to generate description'
+      };
+    }
+  }
 }
 
-// Exported functions
-module.exports = {
-  warmUpModel,
-  generateAICommit,
-};
-
-/**
- * ============================================================================
- * HOW TO USE (example usage inside a Node.js CLI or VS Code extension):
- * ============================================================================
- * 
- * const { warmUpModel, generateAICommit } = require('./aiCommitGenerator');
- * const gitUtils = require('./git-utils'); // contains getGitDiff()
- * 
- * (async () => {
- *   await warmUpModel();
- * 
- *   const diff = gitUtils.getGitDiff(); // Get staged diff
- *   if (!diff) {
- *     console.log("⚠️ No staged changes found.");
- *     return;
- *   }
- * 
- *   const { aiMessage, duration } = await generateAICommit(diff, "feature");
- *   if (aiMessage) {
- *     console.log("✅ Suggested Commit Message:", aiMessage);
- *   } else {
- *     console.log("❌ Failed to generate commit message.");
- *   }
- * })();
- * 
- * ============================================================================
- */
-
+module.exports = AIService;

@@ -129,21 +129,166 @@ function formatCommit(type, ticket, message) {
   return prefix ? `${prefix}: ${message}` : message;
 }
 
+
 /**
- * Performs a `git commit -m "<message>"`
+ * Commits staged changes and pushes them to the remote repository.
  *
- * @param {string} message - Commit message
- * @throws Error if git commit fails
+ * Performs a `git commit -m "<message>"` followed by `git push`.
+ *
+ * @param {string} message - The commit message to use.
+ * @throws {Error} If the commit or push operation fails.
  */
-function gitCommit(message) {
-  const result = spawnSync("git", ["commit", "-m", message], {
+function gitCommitAndPush(message) {
+  // Step 1: Commit
+  const commitResult = spawnSync("git", ["commit", "-m", message], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (commitResult.status !== 0) {
+    throw new Error(commitResult.stderr || "Git commit failed");
+  }
+
+  // Step 2: Push
+  const pushResult = spawnSync("git", ["push"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (pushResult.status !== 0) {
+    throw new Error(pushResult.stderr || "Git push failed");
+  }
+
+  console.log("✅ Commit and push successful.");
+}
+
+/**
+ * Checks if the GitHub CLI is installed on the system.
+ *
+ * @returns {boolean} - Returns true if the GitHub CLI is available; false if it's missing or inaccessible.
+ */
+function isGitHubAuthAvailable() {
+  const result = spawnSync("gh", ["auth", "status"], {
+    encoding: "utf-8",
+  });
+
+  if (result.error) {
+    console.error("GitHub CLI not found:", result.error.message);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Removes references to remote branches that have been deleted from the origin.
+ *
+ * @param {string} cwd - The working directory where the Git command should be executed.
+ * @returns {boolean} - Returns true if pruning was successful; false otherwise.
+ */
+function pruneDeletedRemoteBranches(cwd) {
+  const result = spawnSync("git", ["remote", "prune", "origin"], {
     cwd: getRootPath(),
     encoding: "utf-8",
   });
 
   if (result.status !== 0) {
-    throw new Error(result.stderr || "Git commit failed");
+    console.error("Failed to prune branches:", result.stderr);
+    return false;
   }
+
+  return true;
+}
+
+/**
+ * Retrieves all active remote Git branches after pruning deleted ones.
+ *
+ * @returns {string[]} - An array of branch names without the 'origin/' prefix.
+ */
+function getAllBranches() {
+  pruneDeletedRemoteBranches();
+  const result = spawnSync("git", ["branch", "-r", "--format=%(refname:short)"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (result.status !== 0) {
+    console.error("Failed to fetch branches:", result.stderr);
+    return [];
+  }
+
+  // Parse and clean branch names
+  return result.stdout
+    .split("\n")
+    .map(line => line.trim().replace(/^\* /, ""))
+    .filter(branch => branch.length > 0)
+    .map(branch => branch.replace(/^origin\//, "")); // Remove 'origin/' prefix
+
+}
+
+/**
+ * Retrieves the name of the current Git branch.
+ *
+ * @returns {string|null} - The current branch name, or null if the operation fails.
+ */
+function getCurrentBranch() {
+  const result = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (result.status !== 0) {
+    console.error("Failed to get current branch:", result.stderr);
+    return null;
+  }
+
+  return result.stdout.trim();
+}
+
+/**
+ * Creates a pull request on GitHub using the GitHub CLI.
+ *
+ * @param {string} prTitle - Title of the pull request.
+ * @param {string} prBody - Body content of the pull request.
+ * @param {string} base - The base branch to merge into.
+ * @returns {{success: boolean, prUrl?: string, error?: string}} - Result of the PR creation with either a URL or an error message.
+ */
+function createPR(prTitle, prBody, base) {
+  const head = getCurrentBranch() || '';
+  const result = spawnSync("gh", [
+    'pr', 'create',
+    '--base', base, 
+    '--head', head, 
+    '--title', prTitle,
+    '--body', prBody
+  ],
+  {
+    cwd: getRootPath(),
+    encoding: "utf-8",
+  });
+
+  if (result.error) {
+    console.error("Spawn error:", result.error.message);
+    return {
+      success: false,
+      error: result.error.message
+    };
+  }
+
+  if (result.status !== 0) {
+    console.error("PR creation failed:", result.stderr);
+    return {
+      success: false,
+      error: result.stderr
+    };
+  }
+
+  const url = result.stdout.trim(); // URL of created PR
+  console.log("PR created:", url);
+  return {
+      success: true,
+      prUrl: url
+    };
 }
 
 // Exporting all utility functions
@@ -154,31 +299,8 @@ module.exports = {
   getGitUnstagedFiles,
   getGitDiff,
   formatCommit,
-  gitCommit,
+  gitCommitAndPush,
+  isGitHubAuthAvailable,
+  createPR,
+  getAllBranches
 };
-
-/**
- * ============================================================================
- * USAGE EXAMPLE (in VS Code extension or CLI)
- * ============================================================================
- * 
- * const git = require('./git-utils');
- * 
- * if (!git.isGitRepoSafe()) {
- *   console.error("Not a Git repository.");
- *   return;
- * }
- * 
- * if (!git.isGitStagedFiles()) {
- *   console.warn("No files staged. Please use `git add` before committing.");
- *   return;
- * }
- * 
- * const diff = git.getGitDiff();
- * console.log("Staged Diff:\n", diff);
- * 
- * const commitMsg = git.formatCommit("feat", "TASK-001", "add user service");
- * git.gitCommit(commitMsg);
- * 
- * console.log("✅ Commit successful!");
- */

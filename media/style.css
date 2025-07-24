@@ -32,7 +32,7 @@ body {
     border-radius: var(--radius);
     padding: 2rem;
     width: 100%;
-    max-width: 640px;
+    max-width: 896px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
     transition: box-shadow var(--transition);
@@ -43,13 +43,13 @@ body {
 }
 
 h1 {
-    font-size: 1.75rem;
+    font-size: 2rem;
     margin-bottom: 1.5rem;
     color: var(--accent);
     text-align: center;
 }
 
-form {
+form, #prSection, #commitSection {
     display: grid;
     gap: 1.2rem;
 }
@@ -82,7 +82,7 @@ textarea:focus {
 }
 
 textarea {
-    height: 120px;
+    height: 180px;
     resize: vertical;
 }
 
@@ -157,6 +157,17 @@ button:hover {
   font-size: 0.9rem;
   color: #888;
   font-style: italic;
+}
+
+#errorMessage {
+  display: none;
+  margin-top: 1rem;
+  color: #ff5f5f;
+  font-weight: 500;
+}
+
+#loader, #prSection {
+  display: none;
 }
 
 @keyframes spin {

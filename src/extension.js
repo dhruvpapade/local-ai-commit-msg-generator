@@ -18,7 +18,7 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const aiService = require("./aiService");
+const AIService = require("./aiService");
 const gitUtils = require("./utils/gitUtils");
 const aiUtils = require("./utils/aiUtils");
 
@@ -31,8 +31,10 @@ const AI_MODEL = "llama3.2:3b";
  */
 async function activate(context) {
   try {
+    const aiGen = new AIService();
+
     // Pre-warm the AI model
-    aiService.warmUpModel();
+    aiGen.warmUpModel();
 
     // Register the command
     const disposable = vscode.commands.registerCommand(
@@ -74,60 +76,59 @@ async function activate(context) {
            * Handle messages sent from the WebView
            */
           panel.webview.onDidReceiveMessage(async (message) => {
-            try {
-              if (message.command === "generate") {
-                // Prerequisite checks
-                if (!aiUtils.isOllamaInstalled()) {
-                  return panel.webview.postMessage({
-                    command: "info",
-                    text:
-                      "❌ Ollama is not installed or not available in PATH.\n" +
-                      "Download it from https://ollama.com/download",
-                  });
-                }
-
-                if (!aiUtils.isOllamaRunning(AI_MODEL)) {
-                  return panel.webview.postMessage({
-                    command: "info",
-                    text:
-                      `❌ The model "${AI_MODEL}" is not running.\n` +
-                      `Run: \`ollama pull ${AI_MODEL}\` and \`ollama run ${AI_MODEL}\``,
-                  });
-                }
-
-                if (!gitUtils.isGitRepoSafe()) {
-                  return panel.webview.postMessage({
-                    command: "info",
-                    text: "❌ This is not a valid Git repository.\nRun `git init` to initialize.",
-                  });
-                }
-
-                if (!gitUtils.hasCodeChanges()) {
-                  return panel.webview.postMessage({
-                    command: "info",
-                    text: "❌ No code changes detected in the repository.",
-                  });
-                }
-
-                if (!gitUtils.isGitStagedFiles()) {
-                  return panel.webview.postMessage({
-                    command: "info",
-                    text: "❌ Please stage your changes before generating a commit message.",
-                  });
-                }
-
-                // Get staged diff
-                const diff = gitUtils.getGitDiff();
-                if (!diff || diff.trim().length === 0) {
-                  return panel.webview.postMessage({
-                    command: "info",
-                    text: "❌ No staged file changes found.",
-                  });
-                }
-
+              if (message.command === "generateCommit") {
                 // Ask AI to generate commit message
                 try {
-                  const aiResponse = await aiService.generateAICommit(diff, message.type);
+                  // Prerequisite checks
+                  if (!aiUtils.isOllamaInstalled()) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text:
+                        "❌ Ollama is not installed or not available in PATH.\n" +
+                        "Download it from https://ollama.com/download",
+                    });
+                  }
+
+                  if (!aiUtils.isOllamaRunning(AI_MODEL)) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text:
+                        `❌ The model "${AI_MODEL}" is not running.\n` +
+                        `Run: \`ollama pull ${AI_MODEL}\` and \`ollama run ${AI_MODEL}\``,
+                    });
+                  }
+
+                  if (!gitUtils.isGitRepoSafe()) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text: "❌ This is not a valid Git repository.\nRun `git init` to initialize.",
+                    });
+                  }
+
+                  if (!gitUtils.hasCodeChanges()) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text: "❌ No code changes detected in the repository.",
+                    });
+                  }
+
+                  if (!gitUtils.isGitStagedFiles()) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text: "❌ Please stage your changes before generating a commit message.",
+                    });
+                  }
+
+                  // Get staged diff
+                  const diff = gitUtils.getGitDiff();
+                  if (!diff || diff.trim().length === 0) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text: "❌ No staged file changes found.",
+                    });
+                  }
+                  aiGen.setDiff(diff);
+                  const aiResponse = await aiGen.generateCommitMessage(message.type);
 
                   if (!aiResponse?.aiMessage || aiResponse.aiMessage.length < 5) {
                     return panel.webview.postMessage({
@@ -159,9 +160,9 @@ async function activate(context) {
 
               if (message.command === "commit") {
                 try {
-                  gitUtils.gitCommit(message.message);
+                  gitUtils.gitCommitAndPush(message.message);
                   panel.webview.postMessage({
-                    command: "info",
+                    command: "commitSuccess",
                     text: "✅ Commit completed successfully!",
                   });
                 } catch (e) {
@@ -171,13 +172,77 @@ async function activate(context) {
                   });
                 }
               }
-            } catch (msgErr) {
-              panel.webview.postMessage({
-                command: "info",
-                text: "❌ Unexpected error: " + msgErr.message,
-              });
-              console.error("🔴 WebView message error:", msgErr);
-            }
+
+              if (message.command === "generatePR") {
+                try {
+                   const prResult = await aiGen.generatePRDescription();
+
+                  if (!prResult?.aiMessage || prResult.aiMessage.length < 5) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text: "❌ AI returned an empty or invalid message.",
+                    });
+                  }
+
+                  panel.webview.postMessage({
+                    command: "prResult",
+                    result: {
+                      aiMessage: prResult.aiMessage,
+                      duration: prResult.duration,
+                    },
+                  });
+
+                } catch (e) {
+                  panel.webview.postMessage({
+                    command: "info",
+                    text: "❌ Commit failed: " + e.message,
+                  });
+                }
+              }
+
+              if (message.command === "createPR") {
+                try {
+                  // 1. Check GitHub auth
+                  if (!gitUtils.isGitHubAuthAvailable()) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text: "❌ GitHub CLI is not authenticated. Please run `gh auth login` in the terminal.",
+                    });
+                  }
+
+                  // 2. Create PR (assumes title/body are sent from WebView)
+                  const resp = gitUtils.createPR(message.prTitle, message.prBody, message.baseBranch);
+
+                  if (!resp.success) {
+                    return panel.webview.postMessage({
+                      command: "info",
+                      text: `❌ Failed: ${resp.error}`,
+                    });
+                  }
+
+                  // 3. Respond with success & PR URL
+                  panel.webview.postMessage({
+                    success: true,
+                    command: "info",
+                    text: `✅ PR created successfully:\n ${resp.prUrl}`,
+                  });
+
+                } catch (e) {
+                  panel.webview.postMessage({
+                    command: "info",
+                    text: "❌ Failed: " + e.message,
+                  });
+                }
+              }
+
+              if (message.command === "getBranches") {
+                const branches = gitUtils.getAllBranches();
+                panel.webview.postMessage({
+                  command: "branches",
+                  data: branches,
+                });
+              }
+            
           });
         } catch (cmdErr) {
           vscode.window.showErrorMessage(

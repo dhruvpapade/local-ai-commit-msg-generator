@@ -45,7 +45,7 @@ class OllamaClient {
       const raw = res.data?.response?.trim();
 
       // Return cleaned response by removing special characters
-      return raw.replace(/[^\w\s-]/g, "");
+      return raw;
     } catch (err) {
       console.error("❌ Ollama API Error:", err.message);
       throw new Error("Failed to get response from Ollama model");
