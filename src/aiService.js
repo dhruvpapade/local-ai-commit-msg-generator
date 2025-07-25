@@ -5,28 +5,32 @@ const ollamaClient = require('./ollamaClient');
 class AIService {
   constructor() {
     this.diff = '';
+    this.modelWarmedUp = false;
   }
 
   /**
-   * Set the git diff to be used by the generator.
-   * @param {string} diff
+   * Set the Git diff to be used for generating messages.
+   * @param {string} diff - The Git diff string.
    */
   setDiff(diff) {
-    this.diff = diff?.trim();
+    this.diff = diff?.trim() || '';
   }
 
   /**
-   * Warm up the Ollama model with a dummy prompt.
+   * Warm up the Ollama model to reduce cold-start latency.
+   * This is done only once per session.
    */
   async warmUpModel() {
-    const dummyPrompt = `You are an AI expert to generate concise and informative commit message.`;
-    console.log("⚙️ Warming up AI model...");
-    const startTime = Date.now();
+    if (this.modelWarmedUp) return;
 
+    const dummyPrompt = `You are an AI expert to generate concise and informative commit messages.`;
+    console.log("⚙️ Warming up AI model...");
+
+    const startTime = Date.now();
     try {
       await ollamaClient.generate(dummyPrompt);
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-
+      this.modelWarmedUp = true;
       console.log(`✅ AI model warmed up in ${duration} seconds`);
     } catch (err) {
       console.warn("⚠️ Failed to warm up model:", err.message);
@@ -34,8 +38,8 @@ class AIService {
   }
 
   /**
-   * Generate a commit message from the current diff and commit type.
-   * @param {string} type - Commit type (e.g., feat, fix, chore)
+   * Generate a commit message based on the diff and commit type.
+   * @param {string} type - Commit type (e.g., feat, fix, chore, etc.)
    * @returns {Promise<{ aiMessage: string, duration: string }>}
    */
   async generateCommitMessage(type) {
@@ -45,38 +49,38 @@ class AIService {
     }
 
     const typePrompts = {
-      feat: "Generate a clear, imperative Git commit title (max 50 characters) describing a new feature.",
-      fix: "Generate a concise Git commit title (max 50 characters) describing what bug was fixed.",
-      chore: "Generate a commit title (max 50 characters) for a non-functional update like dependency or config changes.",
-      refactor: "Generate a commit title (max 50 characters) for a code refactor (without changing functionality).",
-      docs: "Generate a commit title (max 50 characters) for documentation updates.",
-      test: "Generate a commit title (max 50 characters) for test case additions or modifications.",
-      style: "Generate a commit title (max 50 characters) for formatting or style-only code changes.",
+      feat: "Write a Git commit title (≤50 chars) for a new feature.",
+      fix: "Write a Git commit title (≤50 chars) for a bug fix.",
+      chore: "Write a Git commit title (≤50 chars) for non-functional updates.",
+      refactor: "Write a Git commit title (≤50 chars) for a code refactor.",
+      docs: "Write a Git commit title (≤50 chars) for documentation updates.",
+      test: "Write a Git commit title (≤50 chars) for test changes.",
+      style: "Write a Git commit title (≤50 chars) for style-only changes.",
     };
 
     const prompt = `
-    ${typePrompts[type]}
-    Key Guidelines:
-    - Focus only on major technical changes
-    - Be concise and specific
-    - Avoid quotes, filler, or vague terms
-    - Return only the title
-
-    Git diff:
-    ${this.diff}
-        `.trim();
+${typePrompts[type] || typePrompts['chore']}
+Git diff:
+${this.diff}
+    `.trim();
 
     console.log('🚀 Generating commit message...');
     const startTime = Date.now();
 
     try {
-      const commitMessage = await ollamaClient.generate(prompt);
+      const rawMessage = await ollamaClient.generate(prompt);
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+      const aiMessage = rawMessage
+        ?.replace(/[^\w\s-]/g, '') // Remove special characters
+        .trim()
+        .replace(/\s+/g, ' ')      // Normalize whitespace
+        .replace(/^\w/, c => c.toUpperCase()) || '';
 
       console.log(`⏱️ Commit message generated in ${duration} seconds`);
 
       return {
-        aiMessage: commitMessage?.replace(/[^\w\s-]/g, "").trim() || '',
+        aiMessage,
         duration: `Commit message generated in ${duration} seconds`
       };
     } catch (err) {
@@ -89,7 +93,7 @@ class AIService {
   }
 
   /**
-   * Generate a PR description from the current diff.
+   * Generate a concise pull request description from the diff.
    * @returns {Promise<{ aiMessage: string, duration: string }>}
    */
   async generatePRDescription() {
@@ -99,29 +103,31 @@ class AIService {
     }
 
     const prompt = `
-    Generate a concise pull request description using only bullet points.
+Generate a concise pull request description using only bullet points.
 
-    Instructions:
-    - Output ONLY meaningful technical bullet points.
-    - Do NOT include any headings, explanations, or notes.
-    - Skip minor changes and focus on major improvements or fixes.
-    - Avoid phrases like "Description", "Note", or any extra context outside the bullets.
+Instructions:
+- Output ONLY meaningful technical bullet points.
+- Do NOT include any headings, explanations, or notes.
+- Skip minor changes and focus on major improvements or fixes.
+- Avoid phrases like "Description", "Note", or any extra context outside the bullets.
 
-    Git diff:
-    ${this.diff}
-        `.trim();
+Git diff:
+${this.diff}
+    `.trim();
 
     console.log('🚀 Generating PR description...');
     const startTime = Date.now();
 
     try {
-      const description = await ollamaClient.generate(prompt);
+      const rawDescription = await ollamaClient.generate(prompt);
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
 
-      console.log(`⏱️ Commit message generated in ${duration} seconds`);
+      const aiMessage = rawDescription?.trim() || '';
+
+      console.log(`⏱️ PR description generated in ${duration} seconds`);
 
       return {
-        aiMessage: description?.trim() || '',
+        aiMessage,
         duration: `Description generated in ${duration} seconds`
       };
     } catch (err) {
