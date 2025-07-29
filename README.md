@@ -37,7 +37,17 @@ ollama run llama3.2:3b
 ```
 <img width="585" height="241" alt="image" src="https://github.com/user-attachments/assets/6a711f63-061a-4238-9291-d3480a4c78f7" />
 
-### 2. Clone and Install Extension
+### 2. Download and Install GitHub CLI (gh)
+https://cli.github.com/
+
+You must authenticate gh CLI before using it.
+
+```bash
+gh auth login
+```
+<img width="715" height="290" alt="image" src="https://github.com/user-attachments/assets/caf4b1c5-550f-4a0f-b2cd-f40dff31db67" />
+
+### 3. Clone and Install Extension
 
 ```bash
 git clone https://github.com/dhruvpapade/local-ai-commit-msg-generator
